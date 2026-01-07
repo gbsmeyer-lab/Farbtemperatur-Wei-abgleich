@@ -19,8 +19,8 @@ const SCENARIOS: Record<ScenarioType, ScenarioConfig> = {
     id: ScenarioType.BLUE_HOUR,
     title: "Blaue Stunde",
     description: "Anmoderation zur 'Blauen Stunde'. Der Himmel ist tiefblau.",
-    // View of a city at dusk from a hill (LA from hills)
-    backgroundUrl: "https://images.unsplash.com/photo-1445583934509-4152750868f1?q=80&w=1920&auto=format&fit=crop",
+    // View of a city at dusk (Chicago skyline) - Reliable URL
+    backgroundUrl: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=1920&auto=format&fit=crop",
     defaultLightK: 3200,
     defaultWbK: 3200,
     targetDescription: "Verstärken Sie das Blau des Himmels, bei neutralem Motiv. (Tipp: Licht & WB auf Kunstlicht ca. 3200K)."
@@ -31,6 +31,7 @@ const App: React.FC = () => {
   const [scenario, setScenario] = useState<ScenarioType>(ScenarioType.SUNSET);
   const [lightK, setLightK] = useState<number>(5600);
   const [wbK, setWbK] = useState<number>(5600);
+  const [isComparing, setIsComparing] = useState<boolean>(false);
 
   // Reset defaults when scenario changes
   useEffect(() => {
@@ -41,11 +42,16 @@ const App: React.FC = () => {
 
   const handleScenarioChange = (newScenario: ScenarioType) => {
     setScenario(newScenario);
+    setIsComparing(false); // Reset compare state on scenario change
   };
 
   const handleAutoWhite = () => {
     setWbK(lightK);
   };
+
+  // Determine values to show in Viewport (User selected OR Original defaults)
+  const activeLightK = isComparing ? SCENARIOS[scenario].defaultLightK : lightK;
+  const activeWbK = isComparing ? SCENARIOS[scenario].defaultWbK : wbK;
 
   return (
     <div className="h-screen w-full flex flex-col bg-zinc-950 text-white overflow-hidden">
@@ -60,20 +66,24 @@ const App: React.FC = () => {
 
       {/* Main Visual Viewport */}
       <Viewport 
-        lightK={lightK} 
-        wbK={wbK} 
+        lightK={activeLightK} 
+        wbK={activeWbK} 
         config={SCENARIOS[scenario]} 
+        isComparing={isComparing}
       />
 
       {/* Interactive Controls */}
       <Controls 
-        lightK={lightK} 
-        wbK={wbK} 
+        lightK={lightK} // Always pass user values to controls so sliders don't jump
+        wbK={wbK}
         scenario={scenario}
         onLightChange={setLightK}
         onWbChange={setWbK}
         onScenarioChange={handleScenarioChange}
         onAutoWhite={handleAutoWhite}
+        onCompareStart={() => setIsComparing(true)}
+        onCompareEnd={() => setIsComparing(false)}
+        isComparing={isComparing}
       />
     </div>
   );

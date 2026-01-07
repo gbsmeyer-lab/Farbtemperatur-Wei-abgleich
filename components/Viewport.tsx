@@ -7,9 +7,10 @@ interface ViewportProps {
   lightK: number;
   wbK: number;
   config: ScenarioConfig;
+  isComparing?: boolean;
 }
 
-export const Viewport: React.FC<ViewportProps> = ({ lightK, wbK, config }) => {
+export const Viewport: React.FC<ViewportProps> = ({ lightK, wbK, config, isComparing }) => {
   // 1. Subject Appearance: 
   // For an abstract white object, the color is exactly the calculated light/WB interaction.
   // We use opacity 1.0 to make the shape solid.
@@ -17,6 +18,7 @@ export const Viewport: React.FC<ViewportProps> = ({ lightK, wbK, config }) => {
 
   // 2. Background Appearance: affected ONLY by the WB K (Light K does not hit the sun/sky)
   // We simulate WB by applying an overlay to the whole image.
+  // Opacity is now handled inside getWbFilterColor for precise control.
   const globalWbColor = getWbFilterColor(wbK);
 
   return (
@@ -26,7 +28,7 @@ export const Viewport: React.FC<ViewportProps> = ({ lightK, wbK, config }) => {
       <div 
         className="absolute inset-0 bg-cover bg-center transition-all duration-300 ease-out"
         style={{ 
-          backgroundImage: `url(${config.backgroundUrl})`,
+          backgroundImage: `url("${config.backgroundUrl}")`,
         }}
       >
         {/* WB Overlay for Background - Mimics camera processing on the scene */}
@@ -35,18 +37,26 @@ export const Viewport: React.FC<ViewportProps> = ({ lightK, wbK, config }) => {
           style={{ 
             backgroundColor: globalWbColor,
             mixBlendMode: 'overlay',
-            opacity: 0.8 // Strength of the WB effect
           }}
         />
       </div>
 
       {/* Info Overlay */}
-      <div className="absolute top-4 left-4 right-4 z-20 flex justify-center md:justify-start">
+      <div className={`absolute top-4 left-4 right-4 z-20 flex justify-center md:justify-start transition-opacity duration-300 ${isComparing ? 'opacity-0' : 'opacity-100'}`}>
         <InfoPanel 
           description={config.description} 
           targetDescription={config.targetDescription}
         />
       </div>
+
+      {/* Compare Mode Indicator */}
+      {isComparing && (
+        <div className="absolute top-8 left-0 right-0 z-30 flex justify-center pointer-events-none animate-in fade-in duration-200">
+          <div className="bg-white/90 text-black px-6 py-2 rounded-full font-bold tracking-widest text-lg shadow-[0_0_20px_rgba(255,255,255,0.4)]">
+            ORIGINAL
+          </div>
+        </div>
+      )}
 
       {/* The Subject (Geometric Abstract Person) */}
       <div className="relative z-10 h-[60%] md:h-[70%] aspect-square flex items-end justify-center pointer-events-none drop-shadow-2xl">

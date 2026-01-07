@@ -43,40 +43,48 @@ export const getRgbString = (kelvin: number, opacity: number = 1): string => {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 };
 
+const lerp = (start: number, end: number, t: number) => start * (1 - t) + end * t;
+
 /**
  * Calculates the visual tint applied to an image based on White Balance.
- * 
- * Logic:
- * If WB is Low (3200K), the camera adds Blue to compensate.
- * If WB is High (6500K), the camera adds Orange to compensate.
+ * Uses manual color interpolation to achieve vivid, artistically correct camera filter simulations.
  */
 export const getWbFilterColor = (wbKelvin: number): string => {
-  // We want to simulate the filter the camera applies.
-  // 3200K WB -> Adds Blue.
-  // 5600K WB -> Neutral.
-  // 8000K WB -> Adds Orange/Red.
-  
-  // We can achieve this by inverting the Kelvin scale relative to a mid-point.
-  
-  let simulatedColorTemp: number;
+  let r, g, b, opacity;
   
   if (wbKelvin < 5600) {
       // User sets Low Kelvin (Expects Warm). Camera adds Blue.
-      // The lower the WB, the Bluer the filter.
-      // Map 2000 -> 20000
-      // Map 5600 -> 6500 (Neutralish)
-      const factor = (5600 - wbKelvin) / (5600 - 2000); // 0 to 1
-      simulatedColorTemp = 6500 + (factor * 20000); 
+      // We interpolate from Neutral Grey (at 5600) to Vivid Deep Blue (at 2000).
+      // Normalized factor 0 (at 5600) to 1 (at 2000)
+      const t = (5600 - wbKelvin) / (5600 - 2000); 
+      
+      // Target Color at 2000K: R=0, G=80, B=255 (Deep Azure Blue)
+      // Neutral at 5600K: R=128, G=128, B=128 (Invisible in Overlay mode)
+      
+      r = lerp(128, 0, t);
+      g = lerp(128, 80, t);
+      b = lerp(128, 255, t);
+      
+      // Opacity ramps up as we move away from neutral
+      // High opacity (0.9) ensures the color is punchy
+      opacity = lerp(0, 0.9, t); 
+
   } else {
       // User sets High Kelvin (Expects Cool). Camera adds Orange.
-      // The higher the WB, the Warmer the filter.
-      // Map 5600 -> 6500
-      // Map 10000 -> 2000
-      const factor = (wbKelvin - 5600) / (10000 - 5600); // 0 to 1
-      simulatedColorTemp = 6500 - (factor * 4500);
+      // We interpolate from Neutral Grey (at 5600) to Vivid Orange (at 10000).
+      // Normalized factor 0 (at 5600) to 1 (at 10000)
+      const t = (wbKelvin - 5600) / (10000 - 5600);
+      
+      // Target Color at 10000K: R=255, G=140, B=0 (Warm Orange)
+      
+      r = lerp(128, 255, t);
+      g = lerp(128, 140, t);
+      b = lerp(128, 0, t);
+      
+      opacity = lerp(0, 0.8, t);
   }
   
-  return getRgbString(simulatedColorTemp, 0.6); // 0.6 opacity for the filter strength
+  return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${opacity})`;
 };
 
 /**
