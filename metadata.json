@@ -1,0 +1,5 @@
+{
+  "name": "CineColor Lab",
+  "description": "Ein interaktiver Simulator für Kameraleute zur Demonstration des Zusammenhangs zwischen Lichtfarbtemperatur, Weißabgleich und Hintergrundwirkung.",
+  "requestFramePermissions": []
+}
